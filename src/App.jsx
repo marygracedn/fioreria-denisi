@@ -23,7 +23,7 @@ const DEFAULT_SERVICES = [
 const TIME_SLOTS  = ["09:00","09:30","10:00","10:30","11:00","11:30","14:00","14:30","15:00","15:30","16:00","16:30","17:00","17:30"];
 const DAYS_IT     = ["Lun","Mar","Mer","Gio","Ven","Sab","Dom"];
 const MONTHS_IT   = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
-const ADMIN_PWD   = "fioreria2026";
+const DEFAULT_PWD = "fioreria2026";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const getDIM    = (y,m)   => new Date(y,m+1,0).getDate();
@@ -256,9 +256,56 @@ function BlockCalendar({ blockedDays, onToggle, blockedSlots, onToggleSlot, full
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
+// PASSWORD EDITOR
+// ══════════════════════════════════════════════════════════════════════════════
+function PasswordEditor({ savedPwd, onPwdChange }) {
+  const [editing, setEditing] = useState(false);
+  const [current, setCurrent] = useState("");
+  const [newPwd, setNewPwd]   = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [error, setError]     = useState("");
+  const [success, setSuccess] = useState(false);
+
+  const handleSave = () => {
+    if(current !== savedPwd) { setError("Password attuale errata."); return; }
+    if(newPwd.length < 6)    { setError("La nuova password deve avere almeno 6 caratteri."); return; }
+    if(newPwd !== confirm)   { setError("Le password non coincidono."); return; }
+    onPwdChange(newPwd);
+    setEditing(false); setCurrent(""); setNewPwd(""); setConfirm(""); setError("");
+    setSuccess(true); setTimeout(()=>setSuccess(false), 3000);
+  };
+
+  return (
+    <div style={{margin:"12px 14px 0",background:"#fff",borderRadius:14,padding:14,boxShadow:"0 2px 8px rgba(0,0,0,0.04)"}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:editing?12:0}}>
+        <div style={{fontWeight:"bold",color:"#9b2c50",fontSize:13}}>🔒 Password Admin</div>
+        <button onClick={()=>{setEditing(!editing);setError("");}} style={{padding:"5px 12px",borderRadius:8,border:"1px solid #f5cfc6",background:"#fff",color:"#9b2c50",fontFamily:"Georgia,serif",fontSize:12,cursor:"pointer"}}>
+          {editing?"Annulla":"✏️ Modifica"}
+        </button>
+      </div>
+      {success&&<div style={{color:"#2d6a3e",fontSize:12,marginTop:4}}>✅ Password aggiornata!</div>}
+      {editing&&(
+        <div style={{display:"flex",flexDirection:"column",gap:9}}>
+          {[{k:"current",l:"Password attuale",v:current,set:setCurrent},{k:"new",l:"Nuova password (min. 6 caratteri)",v:newPwd,set:setNewPwd},{k:"confirm",l:"Conferma nuova password",v:confirm,set:setConfirm}].map(f=>(
+            <div key={f.k}>
+              <label style={{display:"block",fontSize:11,color:"#c49090",marginBottom:3}}>{f.l}</label>
+              <input type="password" value={f.v} onChange={e=>f.set(e.target.value)} style={{width:"100%",padding:"8px 12px",borderRadius:9,border:"1.5px solid #f5cfc6",fontFamily:"Georgia,serif",fontSize:13,color:"#9b2c50",background:"#fff8f6",outline:"none",boxSizing:"border-box"}}/>
+            </div>
+          ))}
+          {error&&<div style={{color:"#c0504d",fontSize:12}}>{error}</div>}
+          <button onClick={handleSave} style={{padding:"10px",borderRadius:10,border:"none",background:"linear-gradient(135deg,#c94f72,#a83058)",color:"#fff",fontFamily:"Georgia,serif",fontSize:13,cursor:"pointer",fontWeight:"bold"}}>
+            💾 Salva nuova password
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
 // ADMIN PANEL
 // ══════════════════════════════════════════════════════════════════════════════
-function AdminPanel({ bookings, onDelete, onClose, limits, onLimitsChange, minDays, onMinDaysChange, blockedDays, blockedSlots, onToggleBlockedDay, onToggleBlockedSlot, fullDays, onToggleFullDay, dayLimits, onDayLimitChange, dayMinDays, onDayMinDaysChange, paymentMethods, onPaymentMethodsChange, services, onServicesChange, dayServices, onToggleDayService, dayPayments, onToggleDayPayment, studioAddress, onStudioAddressChange, priceTiersBouquet, onPTBChange, priceTiersComp, onPTCChange, notes, onNotesChange }) {
+function AdminPanel({ bookings, onDelete, onClose, savedPwd, onPwdChange, limits, onLimitsChange, minDays, onMinDaysChange, blockedDays, blockedSlots, onToggleBlockedDay, onToggleBlockedSlot, fullDays, onToggleFullDay, dayLimits, onDayLimitChange, dayMinDays, onDayMinDaysChange, paymentMethods, onPaymentMethodsChange, services, onServicesChange, dayServices, onToggleDayService, dayPayments, onToggleDayPayment, studioAddress, onStudioAddressChange, priceTiersBouquet, onPTBChange, priceTiersComp, onPTCChange, notes, onNotesChange }) {
   const [filter,setFilter]=useState("tutti"), [search,setSearch]=useState(""), [exp,setExp]=useState(null), [emailModal,setEmailModal]=useState(null);
   const rd=new Date(), todayK=dk(rd.getFullYear(),rd.getMonth(),rd.getDate());
   const list=bookings.filter(b=>{
@@ -293,6 +340,9 @@ function AdminPanel({ bookings, onDelete, onClose, limits, onLimitsChange, minDa
           </div>
         ))}
       </div>
+
+      {/* Cambia password */}
+      <PasswordEditor savedPwd={savedPwd} onPwdChange={onPwdChange}/>
 
       {/* Disponibilità generale */}
       <div style={{margin:"12px 14px 0",background:"#fff",borderRadius:14,padding:14,boxShadow:"0 2px 8px rgba(0,0,0,0.04)"}}>
@@ -453,6 +503,7 @@ export default function FloralBooking() {
   // ── view ────────────────────────────────────────────────────────────────────
   const [view,setView]   = useState("client");
   const [aPwd,setAPwd]   = useState(""), [aErr,setAErr] = useState(false);
+  const [savedPwd,setSavedPwd] = useState(DEFAULT_PWD);
 
   // ── calendar ─────────────────────────────────────────────────────────────
   const [vY,setVY] = useState(TODAY.getFullYear());
@@ -537,6 +588,7 @@ export default function FloralBooking() {
       if(s.priceTiersBouquet) setPTB(s.priceTiersBouquet);
       if(s.priceTiersComp)    setPTC(s.priceTiersComp);
       if(s.notes)             setNotes(s.notes);
+      if(s.adminPwd)          setSavedPwd(s.adminPwd);
     });
   },[]);
 
@@ -556,6 +608,7 @@ export default function FloralBooking() {
   useEffect(()=>{ sbSet("priceTiersBouquet",priceTiersBouquet); },[priceTiersBouquet]);
   useEffect(()=>{ sbSet("priceTiersComp",priceTiersComp); },[priceTiersComp]);
   useEffect(()=>{ sbSet("notes",notes); },[notes]);
+  useEffect(()=>{ sbSet("adminPwd",savedPwd); },[savedPwd]);
 
   // ── Handlers ──────────────────────────────────────────────────────────────
   const reset = () => {
@@ -568,7 +621,7 @@ export default function FloralBooking() {
   };
 
   const handleLogin = () => {
-    if(aPwd===ADMIN_PWD) { setView("admin"); setAErr(false); setAPwd(""); }
+    if(aPwd===savedPwd) { setView("admin"); setAErr(false); setAPwd(""); }
     else setAErr(true);
   };
 
@@ -720,7 +773,6 @@ export default function FloralBooking() {
         {aErr&&<div style={{color:"#c0504d",fontSize:12,marginBottom:8}}>Password errata.</div>}
         <button onClick={handleLogin} style={{...GB,width:"100%",marginTop:6}}>Accedi →</button>
         <button onClick={()=>setView("client")} style={BB}>← Torna al sito</button>
-        <div style={{marginTop:14,fontSize:11,color:"#e0c0c8"}}>Demo: <em>fioreria2026</em></div>
       </div>
     </div>
   );
@@ -731,6 +783,7 @@ export default function FloralBooking() {
   if(view==="admin") return (
     <AdminPanel
       bookings={bookings} onDelete={handleDelete} onClose={()=>setView("client")}
+      savedPwd={savedPwd} onPwdChange={setSavedPwd}
       limits={limits} onLimitsChange={(id,val)=>setLimits(p=>({...p,[id]:val}))}
       minDays={minDays} onMinDaysChange={(id,val)=>setMinDays(p=>({...p,[id]:Math.max(0,val)}))}
       blockedDays={blockedDays} onToggleBlockedDay={handleToggleBlockedDay}
