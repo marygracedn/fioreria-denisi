@@ -9,7 +9,7 @@ module.exports = async (req, res) => {
   try {
     const { amount, currency = 'eur', description } = req.body;
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(amount * 100),
+      amount: Math.round(Number(amount.replace('€','').trim()) * 100),
       currency,
       description,
       automatic_payment_methods: { enabled: true },
