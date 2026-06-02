@@ -1138,7 +1138,7 @@ export default function FloralBooking() {
               <div style={{color:"#9b2c50",fontWeight:"bold",fontSize:15,marginTop:3}}>{service?.label}</div>
             </div>
             <StripePayment
-              amount={price||priceComp||"0"}
+              amount={parseFloat((price||priceComp||"0").replace(/[^0-9.]/g,""))||0}
               description={service?.label+" — "+selDateStr}
               onSuccess={()=>{ setShowStripe(false); doConfirm(stripePid); }}
               onBack={()=>setShowStripe(false)}
