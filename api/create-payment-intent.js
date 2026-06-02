@@ -8,10 +8,11 @@ module.exports = async (req, res) => {
   if (req.method !== 'POST') { res.status(405).json({ error: 'Method not allowed' }); return; }
   try {
     const { amount, currency = 'eur', description } = req.body;
+    const amountNum = parseFloat(String(amount).replace(/[^0-9.]/g, '')) || 1;
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(Number(amount.replace('€','').trim()) * 100),
+      amount: Math.round(amountNum * 100),
       currency,
-      description,
+      description: description || 'Prenotazione',
       automatic_payment_methods: { enabled: true },
     });
     res.status(200).json({ clientSecret: paymentIntent.client_secret });
